@@ -1,28 +1,59 @@
 import sys
 import re
 
-to_match = ""
+r = None
+
+# Regular expression to look for
 if sys.argv[2] == "composer":
-    to_match = "Composer:"
+    r = re.compile(r"Composer: (.*)")
 elif sys.argv[2] == "century":
-    to_match = "Publication Year:" 
+    r = re.compile(r"Composition Year: (.*)")
 elif sys.argv[2] == "cminor":
-    to_match = "Key: (.*)c"
+    r = re.compile(r"Key: (.*)")
 else:
-    exit
+    exit()
 
 dict = {}
+
+
 for line in open(sys.argv[1], 'r'):
-    r = re.compile(r"(.*):(.*)");
-    m = r.match(to_match)
+    m = r.match(line)
     if m is None:
         continue
-    s = r.split(r";")
+
+    #split the capture at ;
+    s = re.split(r"; ", m.group(1))
     for key in s:
+        # Remove everything after '('
+        key = key.split("(", 1)[0]
+        
+        # remove space and ',' from the right, error in dataset
+        key = key.rstrip(", ")
+        if key is "": 
+            continue
         if not key in dict:
             dict[key] = 1
         else:
             dict[key] += 1
-for k, v in dict:
-    print("Key: " + k + " Value: "+ v)
+            
+if sys.argv[2] == "composer":
+    for k, v in dict.items():
+        print(k + ": " + str(v))
+elif sys.argv[2] == "century":
+    # items were saved by year
+    data = [0] * 21
+    for i in range(21):
+        data[i] = 0
+    for k, v in dict.items():
+        # match items only where there is a year
+        kk = re.match(r"\d\d\d\d", k)
+        if kk is None:
+            continue
+        data[int(kk.group(0)) / 100] += v
+    for i in range(21):
+        if data[i] is 0: 
+            continue
+        print(str(i + 1) + "th century: " + str(data[i]))
+elif sys.argv[2] == "cminor":
+    print("Number of songs in c minor: " + str(dict["c"]))
 
