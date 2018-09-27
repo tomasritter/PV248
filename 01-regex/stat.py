@@ -49,7 +49,8 @@ elif sys.argv[2] == "century":
         kk = re.match(r"\d\d\d\d", k)
         if kk is None:
             continue
-        data[int(kk.group(0)) / 100] += v
+        x = kk.group(0)
+        data[int(kk.group(0)) // 100] += v
     for i in range(21):
         if data[i] is 0: 
             continue
