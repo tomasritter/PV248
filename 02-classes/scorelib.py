@@ -4,6 +4,12 @@ class Print:
         self.print_id = print_id
         self.partiture = partiture
 
+    def format(self):
+        return 1
+
+    def composition(self):
+        return self.edition.composition
+
 class Edition:
     def __init__(self, composition, authors, name):
         self.composition = composition
