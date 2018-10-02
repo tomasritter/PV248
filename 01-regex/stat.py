@@ -15,7 +15,6 @@ else:
 
 dict = {}
 
-
 for line in open(sys.argv[1], 'r'):
     m = r.match(line)
     if m is None:
@@ -49,8 +48,7 @@ elif sys.argv[2] == "century":
         kk = re.match(r"\d\d\d\d", k)
         if kk is None:
             continue
-        x = kk.group(0)
-        data[int(kk.group(0)) // 100] += v
+        data[int(kk.group(0)[0:2])] += v
     for i in range(21):
         if data[i] is 0: 
             continue

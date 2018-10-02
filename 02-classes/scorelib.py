@@ -5,8 +5,43 @@ class Print:
         self.partiture = partiture
 
     def format(self):
-        return 1
-
+        s = "Print Number: " + str(self.print_id) + "\n"
+        s += "Composer: "
+        for i in range(len(self.edition.composition.authors)):
+            c = self.edition.composition.authors[i]
+            s += c.name
+            if not c.born is None or not c.died is None:
+                s += " (" + (str(c.born) if not c.born is None else "")
+                s += "--" + (str(c.died) if not c.died is None else "") + ")"
+            if i != len(self.edition.composition.authors) - 1:
+                s += "; "
+        s += "\n"
+        s += "Title: " + (self.edition.composition.name or "") + "\n"
+        s += "Genre: " + (self.edition.composition.genre or "") + "\n"
+        s += "Key: " + (self.edition.composition.key or "") + "\n"
+        s += "Composition Year: " + (self.edition.composition.year or "") + "\n"
+        s += "Edition: " + (self.edition.name or "") + "\n"
+        s += "Editor: "
+        for i in range(len(self.edition.authors)):
+            c = self.edition.authors[i]
+            s += c.name
+            if i != len(self.edition.authors) - 1:
+                s += ", "
+        s += "\n"
+        for i in range(len(self.edition.composition.voices)):
+            v = self.edition.composition.voices[i]
+            s += "Voice " + str(i + 1) + ": "
+            if v.range is None: 
+                s += v.name or ""
+            elif v.name is None:
+                s += v.range
+            else:
+                s += v.range + ", " + v.name
+            s += "\n"
+        s += "Partiture: " + ("yes" if self.partiture else "no") + "\n"
+        s += "Incipit: " + (self.edition.composition.incipit if not self.edition.composition.incipit is None else "") + "\n"
+        return s
+        
     def composition(self):
         return self.edition.composition
 
@@ -17,7 +52,8 @@ class Edition:
         self.name = name
 
 class Composition:
-    def __init__(self, incipit, key, genre, year, voices, authors):
+    def __init__(self, name, incipit, key, genre, year, voices, authors):
+        self.name = name
         self.incipit = incipit
         self.key = key
         self.genre = genre
