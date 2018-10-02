@@ -7,12 +7,16 @@ class Print:
     def format(self):
         s = "Print Number: " + str(self.print_id) + "\n"
         s += "Composer: "
+        # Go through each compsoer in the list
         for i in range(len(self.edition.composition.authors)):
             c = self.edition.composition.authors[i]
+            # Add name to the output string
             s += c.name
+            # Add year of birth/death if present
             if not c.born is None or not c.died is None:
                 s += " (" + (str(c.born) if not c.born is None else "")
                 s += "--" + (str(c.died) if not c.died is None else "") + ")"
+            # Add "; " behind all names except for the last one
             if i != len(self.edition.composition.authors) - 1:
                 s += "; "
         s += "\n"
@@ -25,11 +29,14 @@ class Print:
         for i in range(len(self.edition.authors)):
             c = self.edition.authors[i]
             s += c.name
+            # Add ", " behind all names except for the last one
             if i != len(self.edition.authors) - 1:
                 s += ", "
         s += "\n"
+        # Add voices to the output string
         for i in range(len(self.edition.composition.voices)):
             v = self.edition.composition.voices[i]
+            # Uses index + 1 to get the original order of Voice lines
             s += "Voice " + str(i + 1) + ": "
             if v.range is None: 
                 s += v.name or ""

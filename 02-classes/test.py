@@ -8,35 +8,43 @@ def get_authors(composers):
         return authors
     s = re.split(r"; ", composers)
     for a in s:
+        # If there is not a "(" symbol, there is no year of birth/death
         if a.find("(") == -1:
             authors.append(Person(a, None, None))
         else:
+            # Match name an everything in the brackets
             m = re.match(r"(.*) \((.*)\)", a)
             name = m.group(1)
+            # Try to match numbers around "--" symbols
             m1 = re.match(r"(\d*)--?(\d*)", m.group(2))
             if m1 is None:
                 authors.append(Person(name, None, None))
                 continue
+            # Use matched numbers only if there are 4 digits
             born = int(m1.group(1)) if len(m1.group(1)) == 4 else None
             died = int(m1.group(2)) if len(m1.group(2)) == 4 else None
             authors.append(Person(name, born, died))
     return authors
 
 def get_voices(dict):
-    r = re.compile(r"([^ ,]*--[^ ,]*)[;,]? (.*)?")
     voices = []
     k = 1
     while True:
+        # Go through all the listed voices
         if ("Voice " + str(k)) in dict:
             v = dict["Voice " + str(k)]
+            # Empty case
             if v is None or v == "": 
                 voices.append(Voice(None, None))
+            # If there is range, add id
             elif "--" in v:
+                # Some lines of Voice were seperated by ";", instead use ","
                 v = v.replace('; ', ', ')
                 m = v.split(", ", 1)
                 voices.append(Voice(m[1] if len(m) != 1 else None, m[0]))
             else:
                 voices.append(Voice(v or None, None))
+            # Increase the number of the voice
             k += 1
         else: 
             break
@@ -46,16 +54,21 @@ def get_editors(editors_string):
     editors = []
     if editors_string is None:
         return editors
+    # Strip ',' and ' ' symbols from the right 
     editors_string = editors_string.rstrip(", ")
+    # Split on comma
     s = re.split(r", ", editors_string)
     skip = False
     for i in range(len(s)):
+        # Skip only when else statement has executed in the iteration before
         if skip:
             skip = False
             continue
+        # If split contains ' ', it's a full name an will be used as such
         if s[i].find(" ") != -1:
             editors.append(Person(s[i], None, None))
         else:
+            # If split doesn't contain ' ', then try to get next split as part of the name
             editors.append(Person(s[i] + ((", " + s[i + 1]) if i + 1 < len(s) else ""), None, None))
             skip = True
     return editors
@@ -99,6 +112,7 @@ def load(filename):
         if m is None:
             continue
         dict[m.group(1)] = m.group(2) or None
+        # If incipit has been parsed, we know we are at the endo of a "block"
         if m.group(1) == "Incipit":
             prints.append(get_print(dict))
             dict = {}
