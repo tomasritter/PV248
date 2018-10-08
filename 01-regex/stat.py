@@ -46,9 +46,11 @@ elif sys.argv[2] == "century":
     for k, v in dict.items():
         # match items only where there is a year
         kk = re.match(r"\d\d\d\d", k)
-        if kk is None:
-            continue
-        data[int(kk.group(0)[0:2])] += v
+        if not kk is None:
+            data[int(kk.group(0)[0:2])] += v
+        kk = re.match(r"(\d\d)th century", k)
+        if not kk is None:
+            data[int(kk.group(1)) - 1] += v
     for i in range(21):
         if data[i] is 0: 
             continue
