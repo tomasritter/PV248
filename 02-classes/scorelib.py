@@ -26,7 +26,7 @@ class Print:
         s += "Title: " + (self.edition.composition.name or "") + "\n"
         s += "Genre: " + (self.edition.composition.genre or "") + "\n"
         s += "Key: " + (self.edition.composition.key or "") + "\n"
-        s += "Composition Year: " + (self.edition.composition.year or "") + "\n"
+        s += "Composition Year: " + (str(self.edition.composition.year) if not self.edition.composition.year is None else "") + "\n"
         s += "Edition: " + (self.edition.name or "") + "\n"
         s += "Editor: "
         for i in range(len(self.edition.authors)):
@@ -158,7 +158,7 @@ def get_year(comp_year):
     if comp_year is None:
         return None
     m = re.match(r"\d\d\d\d", comp_year)
-    return m.group(0) if m is not None else None
+    return int(m.group(0)) if m is not None else None
 
 def get_print(dict):
     printId = int(dict["Print Number"])
