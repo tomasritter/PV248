@@ -187,7 +187,7 @@ def load(filename):
     r = re.compile(r"(.*)?: ?(.*)")
     prints = []
     dict = {}
-    for line in open(sys.argv[1], 'r'):
+    for line in open(filename, 'r'):
         m = r.match(line)
         if m is None:
             continue
