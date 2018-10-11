@@ -50,6 +50,6 @@ create table edition_author( id integer primary key not null,
 -- primary key. For print, however, this is the value of the 'Print Number'
 -- field from the text file.
 create table print ( id integer primary key not null,
-                     partiture char(1) default 'N' not null, -- N = No, Y = Yes, P = Partial
+                     partiture char(1) default 'N' not null, -- N = No, Y = Yes
                      edition integer references edition( id ) );
 

@@ -1,5 +1,6 @@
 import re
 import sys
+import sqlite3
 
 class Print:
     def __init__(self, edition, print_id, partiture):
@@ -9,12 +10,20 @@ class Print:
         
     def composition(self):
         return self.edition.composition
+    
+    def add_to_db(self, conn, cur):
+        self.edition.add_to_db(conn, cur)
+        return
 
 class Edition:
     def __init__(self, composition, authors, name):
         self.composition = composition
         self.authors = authors
         self.name = name
+            
+    def add_to_db(self, conn, cur):
+        self.composition.add_to_db(conn, cur)
+        return
 
 class Composition:
     def __init__(self, name, incipit, key, genre, year, voices, authors):
@@ -26,16 +35,38 @@ class Composition:
         self.voices = voices
         self.authors = authors
 
+    def add_to_db(self, conn, cur):
+        for author in self.authors:
+            index = author.add_to_db(conn, cur)
+            cur.execute("")
+        return
+
 class Voice:
     def __init__(self, name, range):
         self.name = name
         self.range = range
+
+    def add_to_db(self, conn, cur):
+        return
 
 class Person:
     def __init__(self, name, born, died):
         self.name = name
         self.born = born
         self.died = died
+
+    def add_to_db(self, conn, cur):
+        cur.execute("SELECT id, born, died FROM person WHERE name = (?)", (self.name,))
+        person = cur.fetchone()
+        
+        if person is None:
+            cur.execute("INSERT INTO person VALUES (?, ?, ?, ?)", (None, self.born, self.died, self.name))
+        else:
+            if person[1] is None:
+                cur.execute("UPDATE person SET born = (?) WHERE id = (?)", (self.born, person[0]))
+            if person[2] is None:
+                cur.execute("UPDATE person SET died = (?) WHERE id = (?)", (self.died, person[0]))
+        
 
 def get_authors(composers):
     authors = []
@@ -115,7 +146,7 @@ def get_year(comp_year):
     m = re.match(r"\d\d\d\d", comp_year)
     return int(m.group(0)) if m is not None else None
 
-def get_print(dict):
+def add_to_db(dict, conn, curr):
     printId = int(dict["Print Number"])
     authors = get_authors(dict["Composer"])
     title = dict["Title"] if "Title" in dict else None
@@ -136,11 +167,12 @@ def get_print(dict):
     composition = Composition(title, incipit, key, genre, year, voices, authors)
     edition = Edition(composition, editors, name)
     p = Print(edition, printId, partiture)
-    return p;
+    
+    p.add_to_db(conn, curr)
 
-def load(filename):
+    
+def load(filename, conn, cur):
     r = re.compile(r"(.*)?: ?(.*)")
-    prints = []
     dict = {}
     for line in open(sys.argv[1], 'r'):
         m = r.match(line)
@@ -149,6 +181,5 @@ def load(filename):
         dict[m.group(1)] = m.group(2) or None
         # If incipit has been parsed, we know we are at the endo of a "block"
         if m.group(1) == "Incipit":
-            prints.append(get_print(dict))
+            add_to_db(dict, conn, cur)
             dict = {}
-    return prints
