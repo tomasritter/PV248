@@ -90,7 +90,7 @@ def get_authors(composers):
     for a in s:
         # If there is not a "(" symbol, there is no year of birth/death
         if a.find("(") == -1:
-            authors.append(Person(a, None, None))
+            authors.append(Person(a.rstrip(), None, None))
         else:
             # Match name an everything in the brackets
             m = re.match(r"(.*) \((.*)\)", a)

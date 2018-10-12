@@ -38,17 +38,5 @@ cur.execute("create table print ( id integer primary key not null, \
 
 load(sys.argv[1], conn, cur)
 
-cur.execute("INSERT INTO person VALUES (?, ?, ?, ?)", (None, None, 1956, "Wolfgang amadeus"))
-cur.execute("SELECT id, born, died FROM person WHERE name = (?)", ('Wolfgang amadeus',))
-user = cur.fetchone()
-
-if user is None:
-    cur.execute("INSERT INTO person VALUES (?, ?, ?, ?)", (None, 1954, 1956, "Wolfgang amadeus"))
-else:
-    if user[1] is None:
-        cur.execute("UPDATE person SET born = (?) WHERE id = (?)", (1954, user[0]))
-    if user[2] is None:
-        cur.execute("UPDATE person SET died = (?) WHERE id = (?)", (1956, user[0]))
-        
 conn.commit()
 conn.close()

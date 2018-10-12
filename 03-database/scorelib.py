@@ -12,8 +12,9 @@ class Print:
         return self.edition.composition
     
     def add_to_db(self, conn, cur):
-        self.edition.add_to_db(conn, cur)
-        return
+        edition_id = self.edition.add_to_db(conn, cur)
+        cur.execute("INSERT INTO print VALUES (?, ?, ?)", 
+                    (None, 'Y' if self.partiture else 'N', edition_id))
 
 class Edition:
     def __init__(self, composition, authors, name):
@@ -22,8 +23,14 @@ class Edition:
         self.name = name
             
     def add_to_db(self, conn, cur):
-        self.composition.add_to_db(conn, cur)
-        return
+        composition_id = self.composition.add_to_db(conn, cur)
+        cur.execute("INSERT INTO edition VALUES (?, ?, ?, ?)", 
+                    (None, composition_id, self.name, self.composition.year))
+        edition_id = cur.lastrowid
+        for author in self.authors:
+            person_id = author.add_to_db(conn, cur)
+            cur.execute("INSERT INTO edition_author VALUES (?, ?, ?)", (None, edition_id, person_id))
+        return edition_id
 
 class Composition:
     def __init__(self, name, incipit, key, genre, year, voices, authors):
@@ -36,18 +43,24 @@ class Composition:
         self.authors = authors
 
     def add_to_db(self, conn, cur):
+        cur.execute("INSERT INTO score VALUES (?, ?, ?, ?, ?, ?)", 
+                    (None, self.name, self.genre, self.key, self.incipit, self.year))
+        composition_id = cur.lastrowid
         for author in self.authors:
-            index = author.add_to_db(conn, cur)
-            cur.execute("")
-        return
+            person_id = author.add_to_db(conn, cur)
+            cur.execute("INSERT INTO score_author VALUES (?, ?, ?)", (None, composition_id, person_id))
+        for index, voice in enumerate(self.voices, start=1):
+            voice.add_to_db(conn, cur, index, composition_id)
+        return composition_id
 
 class Voice:
     def __init__(self, name, range):
         self.name = name
         self.range = range
 
-    def add_to_db(self, conn, cur):
-        return
+    def add_to_db(self, conn, cur, index, composition_id):
+        cur.execute("INSERT INTO voice VALUES (?, ?, ?, ?, ?)", 
+                    (None, index, composition_id, self.range, self.name)) 
 
 class Person:
     def __init__(self, name, born, died):
@@ -61,11 +74,13 @@ class Person:
         
         if person is None:
             cur.execute("INSERT INTO person VALUES (?, ?, ?, ?)", (None, self.born, self.died, self.name))
+            return cur.lastrowid
         else:
             if person[1] is None:
                 cur.execute("UPDATE person SET born = (?) WHERE id = (?)", (self.born, person[0]))
             if person[2] is None:
                 cur.execute("UPDATE person SET died = (?) WHERE id = (?)", (self.died, person[0]))
+            return person[0]
         
 
 def get_authors(composers):
@@ -76,7 +91,7 @@ def get_authors(composers):
     for a in s:
         # If there is not a "(" symbol, there is no year of birth/death
         if a.find("(") == -1:
-            authors.append(Person(a, None, None))
+            authors.append(Person(a.rstrip(), None, None))
         else:
             # Match name an everything in the brackets
             m = re.match(r"(.*) \((.*)\)", a)
