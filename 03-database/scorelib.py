@@ -14,7 +14,7 @@ class Print:
     def add_to_db(self, conn, cur):
         edition_id = self.edition.add_to_db(conn, cur)
         cur.execute("INSERT INTO print VALUES (?, ?, ?)", 
-                    (None, 'Y' if self.partiture else 'N', edition_id))
+                    (self.print_id, 'Y' if self.partiture else 'N', edition_id))
 
 class Edition:
     def __init__(self, composition, authors, name):
@@ -43,8 +43,20 @@ class Composition:
         self.authors = authors
 
     def add_to_db(self, conn, cur):
+        cur.execute("SELECT id, name, genre, key, incipit, year FROM score WHERE name = (?)", (self.name,))
+        score = cur.fetchone()
+        if score is None or\
+            score[2] != self.genre or score[3] != self.key or \
+            score[4] != self.incipit or score[5] != self.year or \
+            not self.same_authors(conn, cur, score[0]) or \
+            not self.same_voices(conn, cur, score[0]):
+            return self.add_composition_to_db(conn, cur)
+        else:
+            return score[0]
+    
+    def add_composition_to_db(self, conn, cur):
         cur.execute("INSERT INTO score VALUES (?, ?, ?, ?, ?, ?)", 
-                    (None, self.name, self.genre, self.key, self.incipit, self.year))
+                        (None, self.name, self.genre, self.key, self.incipit, self.year))
         composition_id = cur.lastrowid
         for author in self.authors:
             person_id = author.add_to_db(conn, cur)
@@ -52,6 +64,28 @@ class Composition:
         for index, voice in enumerate(self.voices, start=1):
             voice.add_to_db(conn, cur, index, composition_id)
         return composition_id
+    
+    def same_authors(self, conn, cur, score_id):
+        cur.execute("SELECT name FROM score_author INNER JOIN person ON \
+                    score_author.composer = person.id WHERE score = (?)", (score_id, ))
+        authors_names = [i[0] for i in cur.fetchall()]
+        if len(authors_names) != len(self.authors):
+            return False
+        self_authors_names = []
+        for a in self.authors:
+            self_authors_names.append(a.name)
+        return sorted(self_authors_names) == sorted(authors_names)
+        
+    def same_voices(self, conn, cur, score_id):
+        cur.execute("SELECT number, range, name FROM voice WHERE score = (?) ORDER BY number", (score_id, ))
+        voices = cur.fetchall()
+        if len(voices) != len(self.voices):
+            return False
+        for i in range(0, len(voices)):
+            if voices[i][1] != self.voices[i].range or voices[i][2] != self.voices[i].name:
+                return False
+        return True
+                
 
 class Voice:
     def __init__(self, name, range):
@@ -165,6 +199,7 @@ def add_to_db(dict, conn, curr):
     printId = int(dict["Print Number"])
     authors = get_authors(dict["Composer"])
     title = dict["Title"] if "Title" in dict else None
+    title = title if title is None else title.rstrip()
     incipit = dict["Incipit"] if "Incipit" in dict else None
     key = None
     if "Key" in dict:
