@@ -3,7 +3,8 @@ import sys
 import os
 from scorelib import *
 
-os.remove(sys.argv[2])
+if os.path.exists(sys.argv[2]):
+    os.remove(sys.argv[2])
 
 conn = sqlite3.connect(sys.argv[2])
 cur = conn.cursor()
