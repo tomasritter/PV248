@@ -24,13 +24,34 @@ class Edition:
             
     def add_to_db(self, conn, cur):
         composition_id = self.composition.add_to_db(conn, cur)
+        cur.execute("SELECT name, id FROM edition WHERE score = (?)", (composition_id, ))
+        editions = cur.fetchall()
+        if not editions:
+            return self.add_edition_to_db(conn, cur, composition_id)
+        for e in editions:
+            if self.name == e[0] and self.same_authors(conn, cur, e[0]):
+                return e[0]
+        return self.add_edition_to_db(conn, cur, composition_id)
+    
+    def add_edition_to_db(self, conn, cur, composition_id):
         cur.execute("INSERT INTO edition VALUES (?, ?, ?, ?)", 
-                    (None, composition_id, self.name, self.composition.year))
+                    (None, composition_id, self.name, None))
         edition_id = cur.lastrowid
         for author in self.authors:
             person_id = author.add_to_db(conn, cur)
             cur.execute("INSERT INTO edition_author VALUES (?, ?, ?)", (None, edition_id, person_id))
         return edition_id
+    
+    def same_authors(self, conn, cur, edition_id):
+        cur.execute("SELECT name FROM edition_author INNER JOIN person ON \
+                    edition_author.editor = person.id WHERE edition = (?)", (edition_id, ))
+        authors_names = [i[0] for i in cur.fetchall()]
+        if len(authors_names) != len(self.authors):
+            return False
+        self_authors_names = []
+        for a in self.authors:
+            self_authors_names.append(a.name)
+        return sorted(self_authors_names) == sorted(authors_names)
 
 class Composition:
     def __init__(self, name, incipit, key, genre, year, voices, authors):

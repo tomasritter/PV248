@@ -9,6 +9,8 @@ if os.path.exists(sys.argv[2]):
 conn = sqlite3.connect(sys.argv[2])
 cur = conn.cursor()
 
+#Create needed tables
+
 cur.execute("create table person ( id integer primary key not null, \
                                   born integer, died integer, \
                                   name varchar not null )")
