@@ -2,6 +2,8 @@ import re
 import sys
 import sqlite3
 
+# Each class has a method add_to_db, which returns id of itself in the database
+
 class Print:
     def __init__(self, edition, print_id, partiture):
         self.edition = edition
@@ -24,15 +26,21 @@ class Edition:
             
     def add_to_db(self, conn, cur):
         composition_id = self.composition.add_to_db(conn, cur)
-        cur.execute("SELECT name, id FROM edition WHERE score = (?)", (composition_id, ))
+        # checking for duplicates
+        cur.execute("SELECT id, name FROM edition WHERE score = (?)", (composition_id, ))
         editions = cur.fetchall()
+        # nothing found, create a new edition
         if not editions:
             return self.add_edition_to_db(conn, cur, composition_id)
+        
         for e in editions:
-            if self.name == e[0] and self.same_authors(conn, cur, e[0]):
+            # Check whether the edition has the same name and authors
+            if self.name == e[1] and self.same_authors(conn, cur, e[0]):
+                # It does, return id of edition already in db
                 return e[0]
         return self.add_edition_to_db(conn, cur, composition_id)
-    
+
+    #Adds edition and its authors to db    
     def add_edition_to_db(self, conn, cur, composition_id):
         cur.execute("INSERT INTO edition VALUES (?, ?, ?, ?)", 
                     (None, composition_id, self.name, None))
@@ -42,15 +50,21 @@ class Edition:
             cur.execute("INSERT INTO edition_author VALUES (?, ?, ?)", (None, edition_id, person_id))
         return edition_id
     
+    # Duplicated code except for the sql query, I think it's better to have
+    # logic for editors and composers seperated
     def same_authors(self, conn, cur, edition_id):
         cur.execute("SELECT name FROM edition_author INNER JOIN person ON \
                     edition_author.editor = person.id WHERE edition = (?)", (edition_id, ))
+        # Get all authors as list
         authors_names = [i[0] for i in cur.fetchall()]
+        # Compare length
         if len(authors_names) != len(self.authors):
             return False
         self_authors_names = []
+        # Get all names of authors in self
         for a in self.authors:
             self_authors_names.append(a.name)
+        # Return whether the lists are equal
         return sorted(self_authors_names) == sorted(authors_names)
 
 class Composition:
@@ -66,6 +80,9 @@ class Composition:
     def add_to_db(self, conn, cur):
         cur.execute("SELECT id, name, genre, key, incipit, year FROM score WHERE name = (?)", (self.name,))
         score = cur.fetchone()
+        # Check whether the score with the same name is the same in all other things,
+        # If at least one is different, create new entry in database
+        # Else return value already in db
         if score is None or\
             score[2] != self.genre or score[3] != self.key or \
             score[4] != self.incipit or score[5] != self.year or \
@@ -89,12 +106,16 @@ class Composition:
     def same_authors(self, conn, cur, score_id):
         cur.execute("SELECT name FROM score_author INNER JOIN person ON \
                     score_author.composer = person.id WHERE score = (?)", (score_id, ))
+        # Compare length
         authors_names = [i[0] for i in cur.fetchall()]
+        # Compare length
         if len(authors_names) != len(self.authors):
             return False
         self_authors_names = []
+        # Get all names of authors in self
         for a in self.authors:
             self_authors_names.append(a.name)
+        # Return whether the lists are equal
         return sorted(self_authors_names) == sorted(authors_names)
         
     def same_voices(self, conn, cur, score_id):
@@ -126,11 +147,12 @@ class Person:
     def add_to_db(self, conn, cur):
         cur.execute("SELECT id, born, died FROM person WHERE name = (?)", (self.name,))
         person = cur.fetchone()
-        
+        # If no person of the same name found, insert it
         if person is None:
             cur.execute("INSERT INTO person VALUES (?, ?, ?, ?)", (None, self.born, self.died, self.name))
             return cur.lastrowid
         else:
+            # Check whether new born or died data could be used to update the db
             if person[1] is None:
                 cur.execute("UPDATE person SET born = (?) WHERE id = (?)", (self.born, person[0]))
             if person[2] is None:
