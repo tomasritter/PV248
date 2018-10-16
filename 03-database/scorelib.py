@@ -175,8 +175,13 @@ def get_authors(composers):
             name = m.group(1)
             # Try to match numbers around "--" symbols
             m1 = re.match(r"(\d*)--?(\d*)", m.group(2))
+            # If nothing matched within the brackets
             if m1 is None:
-                authors.append(Person(name, None, None))
+                born_match = re.match(r"\*(\d*)", m.group(2))
+                died_match = re.match(r"\+(\d*)", m.group(2))
+                born = int(born_match.group(1)) if not born_match is None and len(born_match.group(1)) == 4 else None
+                died = int(died_match.group(1)) if not died_match is None and len(died_match.group(1)) == 4 else None
+                authors.append(Person(name, born, died))
                 continue
             # Use matched numbers only if there are 4 digits
             born = int(m1.group(1)) if len(m1.group(1)) == 4 else None
