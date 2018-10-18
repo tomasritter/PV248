@@ -221,6 +221,12 @@ def get_editors(editors_string):
     editors_string = editors_string.rstrip(", ")
     # Split on comma
     s = re.split(r", ", editors_string)
+    
+    # Remove possible brackets and right whitespace
+    for i in range(len(s)):
+        ss = s[i].split("(")[0]
+        s[i] = ss.rstrip()
+        
     skip = False
     for i in range(len(s)):
         # Skip only when else statement has executed in the iteration before
