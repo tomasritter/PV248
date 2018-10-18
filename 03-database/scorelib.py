@@ -261,6 +261,7 @@ def add_to_db(dict, conn, curr):
     genre = None
     if "Genre" in dict:
         genre = None if dict["Genre"] is "" else dict["Genre"]
+        genre = None if genre is None else genre.rstrip()
     partiture = False
     if "Partiture" in dict and not dict["Partiture"] is None and "yes" in dict["Partiture"]:
             partiture = True
