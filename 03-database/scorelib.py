@@ -172,7 +172,7 @@ def get_authors(composers):
         else:
             # Match name an everything in the brackets
             m = re.match(r"(.*) \((.*)\)", a)
-            name = m.group(1)
+            name = m.group(1).rstrip()
             # Try to match numbers around "--" symbols
             m1 = re.match(r"(\d*)--?(\d*)", m.group(2))
             # If nothing matched within the brackets
@@ -270,13 +270,13 @@ def add_to_db(dict, conn, curr):
 
     
 def load(filename, conn, cur):
-    r = re.compile(r"(.*)?: ?(.*)")
+    r = re.compile(r"(.*)?: *(.*)")
     dict = {}
-    for line in open(sys.argv[1], 'r'):
+    for line in open(filename, 'r'):
         m = r.match(line)
         if m is None:
             continue
-        dict[m.group(1)] = m.group(2) or None
+        dict[m.group(1)] = m.group(2).rstrip() or None
         # If incipit has been parsed, we know we are at the endo of a "block"
         if m.group(1) == "Incipit":
             add_to_db(dict, conn, cur)
