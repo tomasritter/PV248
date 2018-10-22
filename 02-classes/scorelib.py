@@ -96,13 +96,18 @@ def get_authors(composers):
             m = re.match(r"(.*) \((.*)\)", a)
             name = m.group(1).rstrip()
             # Try to match numbers around "--" symbols
-            m1 = re.match(r"(\d*)--?(\d*)", m.group(2))
+            m1 = re.match(r"(.*?)--?(.*)", m.group(2))
+            # If nothing matched within the brackets
             if m1 is None:
-                authors.append(Person(name, None, None))
+                born_match = re.match(r"\*(\d*)", m.group(2))
+                died_match = re.match(r"\+(\d*)", m.group(2))
+                born = int(born_match.group(1)) if not born_match is None and len(born_match.group(1)) == 4 else None
+                died = int(died_match.group(1)) if not died_match is None and len(died_match.group(1)) == 4 else None
+                authors.append(Person(name, born, died))
                 continue
             # Use matched numbers only if there are 4 digits
-            born = int(m1.group(1)) if len(m1.group(1)) == 4 else None
-            died = int(m1.group(2)) if len(m1.group(2)) == 4 else None
+            born = int(m1.group(1)) if len(m1.group(1)) == 4 and m1.group(1).isdigit() else None
+            died = int(m1.group(2)) if len(m1.group(2)) == 4 and m1.group(2).isdigit() else None
             authors.append(Person(name, born, died))
     return authors
 
@@ -171,6 +176,7 @@ def get_print(dict):
     printId = int(dict["Print Number"])
     authors = get_authors(dict["Composer"])
     title = dict["Title"] if "Title" in dict else None
+    title = title if title is None else title.rstrip()
     incipit = dict["Incipit"] if "Incipit" in dict else None
     key = None
     if "Key" in dict:
@@ -178,6 +184,7 @@ def get_print(dict):
     genre = None
     if "Genre" in dict:
         genre = None if dict["Genre"] is "" else dict["Genre"]
+        genre = None if genre is None else genre.rstrip()
     partiture = False
     if "Partiture" in dict and not dict["Partiture"] is None and "yes" in dict["Partiture"]:
             partiture = True
@@ -191,7 +198,7 @@ def get_print(dict):
     return p;
 
 def load(filename):
-    r = re.compile(r"(.*)?: *(.*)")
+    r = re.compile(r"(.*?): *(.*)")
     prints = []
     dict = {}
     for line in open(filename, 'r'):

@@ -174,7 +174,7 @@ def get_authors(composers):
             m = re.match(r"(.*) \((.*)\)", a)
             name = m.group(1).rstrip()
             # Try to match numbers around "--" symbols
-            m1 = re.match(r"(\d*)--?(\d*)", m.group(2))
+            m1 = re.match(r"(.*?)--?(.*)", m.group(2))
             # If nothing matched within the brackets
             if m1 is None:
                 born_match = re.match(r"\*(\d*)", m.group(2))
@@ -184,8 +184,8 @@ def get_authors(composers):
                 authors.append(Person(name, born, died))
                 continue
             # Use matched numbers only if there are 4 digits
-            born = int(m1.group(1)) if len(m1.group(1)) == 4 else None
-            died = int(m1.group(2)) if len(m1.group(2)) == 4 else None
+            born = int(m1.group(1)) if len(m1.group(1)) == 4 and m1.group(1).isdigit() else None
+            died = int(m1.group(2)) if len(m1.group(2)) == 4 and m1.group(2).isdigit() else None
             authors.append(Person(name, born, died))
     return authors
 
@@ -277,7 +277,7 @@ def add_to_db(dict, conn, curr):
 
     
 def load(filename, conn, cur):
-    r = re.compile(r"(.*)?: *(.*)")
+    r = re.compile(r"(.*?): *(.*)")
     dict = {}
     for line in open(filename, 'r'):
         m = r.match(line)

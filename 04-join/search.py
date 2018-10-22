@@ -18,7 +18,6 @@ def add_values_to_dict_list(dict, key, values, cur):
     for v in values:
         dict[key].append(dict_factory(cur, v))
         
-
 def get_composer_info(cur, row):
     d = {}
     d["Print Number"] = row[1]
@@ -45,7 +44,8 @@ def get_composer_info(cur, row):
                             voice.score = score.id WHERE score.id = (?) ORDER BY number", (row[2],))
     add_values_to_dict_list(d, "Voices", voices, cur)
     
-    add_value_to_dict(d, "Partiture", row[9])
+    if not row[9] is None:
+        d["Partiture"] = "yes" if row[9] == 'Y' else "no"
      
     add_value_to_dict(d, "Incipit", row[10])
     return d
