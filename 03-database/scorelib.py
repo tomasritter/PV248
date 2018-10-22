@@ -79,18 +79,17 @@ class Composition:
 
     def add_to_db(self, conn, cur):
         cur.execute("SELECT id, name, genre, key, incipit, year FROM score WHERE name = (?)", (self.name,))
-        score = cur.fetchone()
+        scores = cur.fetchall()
         # Check whether the score with the same name is the same in all other things,
         # If at least one is different, create new entry in database
         # Else return value already in db
-        if score is None or\
-            score[2] != self.genre or score[3] != self.key or \
-            score[4] != self.incipit or score[5] != self.year or \
-            not self.same_authors(conn, cur, score[0]) or \
-            not self.same_voices(conn, cur, score[0]):
-            return self.add_composition_to_db(conn, cur)
-        else:
-            return score[0]
+        for s in scores:
+            if s[2] == self.genre and s[3] == self.key and \
+            s[4] == self.incipit and s[5] == self.year and \
+            self.same_authors(conn, cur, s[0]) and \
+            self.same_voices(conn, cur, s[0]):
+               return s[0] 
+        return self.add_composition_to_db(conn, cur)
     
     def add_composition_to_db(self, conn, cur):
         cur.execute("INSERT INTO score VALUES (?, ?, ?, ?, ?, ?)", 
