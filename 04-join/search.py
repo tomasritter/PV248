@@ -45,7 +45,7 @@ def get_composer_info(cur, row):
     add_values_to_dict_list(d, "Voices", voices, cur)
     
     if not row[9] is None:
-        d["Partiture"] = "yes" if row[9] == 'Y' else "no"
+        d["Partiture"] = True if row[9] == 'Y' else False
      
     add_value_to_dict(d, "Incipit", row[10])
     return d
