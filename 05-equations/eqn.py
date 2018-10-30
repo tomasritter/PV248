@@ -64,7 +64,7 @@ else:
     s = "solution: "
     solutions = {}
     for i in range(len(r)):
-        solutions[var_names[i]] = str(round(r[i], 10))
+        solutions[var_names[i]] = str(r[i])
     solutions_in_order = sorted(solutions.items())
     for i, sol in enumerate(solutions_in_order):
         s += sol[0] + " = " + sol[1]
