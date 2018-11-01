@@ -20,7 +20,7 @@ for eq in open(sys.argv[1], 'r'):
             break
         m = r.match(s)
         if m is None:
-            if s == "=": 
+            if s == "=":
                 result = True
             elif s == "-":
                 negative = True
