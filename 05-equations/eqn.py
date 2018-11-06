@@ -10,6 +10,7 @@ variable_index = 0
 r = re.compile(r"(\d*)([a-z])")
 
 for eq in open(sys.argv[1], 'r'):
+    eq = re.sub( '\s+', ' ', eq ).strip()
     ss = eq.split(' ')
     d = {}
     negative = False

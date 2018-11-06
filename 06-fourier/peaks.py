@@ -16,26 +16,27 @@ samples = []
 
 if nchannels == 1:
     for sample in frames:
-        unpacked = struct.unpack('h', sample) 
-        samples.append(float(struct.unpack('h', sample)[0] / 32767.0))
-elif nchannels == 2: 
+        unpacked = struct.unpack('h', sample)
+        samples.append(float(struct.unpack('h', sample)[0]))
+elif nchannels == 2:
     for i in range(0, len(frames), 2):
         unpacked1 = struct.unpack('h', frames[i])[0]
         unpacked2 = struct.unpack('h', frames[i+1])[0]
-        s = (float(unpacked1 / 32767.0) + float(unpacked2 / 32767.0)) / 2.0
+        s = (float(unpacked1) + float(unpacked2)) / 2.0
         samples.append(s)
 else:
     raise ValueError("Not recognized number of channels")
-# Window size
-# Used 5 from here http://support.ircam.fr/docs/AudioSculpt/3.0/co/Window%20Size.html
-window_size = 5 * framerate
+    
+window_size = framerate
 # Splits at given positions
 split_at = [i for i in range(window_size, nframes, window_size)] 
 # Split array
 split = np.array_split(np.array(samples), split_at)
-
-global_min = sys.float_info.max
-global_max = sys.float_info.min
+# Ignore last window if it is not full
+if nframes % window_size != 0: 
+    split = split[:-1]
+global_min = sys.maxsize
+global_max = -sys.maxsize
 
 # For each window
 for s in split:
@@ -44,7 +45,7 @@ for s in split:
     # Calculate mean
     mean = np.mean(c)
     # Filter peaks
-    filtered = c[c >= 20 * mean]
+    filtered = np.argwhere(c >= 20 * mean)
     
     # If there are peaks, find the biggest one
     if filtered.size > 0:
@@ -56,7 +57,7 @@ for s in split:
         if max > global_max:
             global_max = max
 
-if global_min != sys.float_info.max:
-    print("low = " + str(int(global_min)) + ", high = " + str(int(global_max)))
+if global_min != sys.maxsize:
+    print("low = " + str(global_min) + ", high = " + str(global_max))
 else:
     print("no peaks")

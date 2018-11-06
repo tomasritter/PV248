@@ -50,7 +50,7 @@ def save_wav(file_name):
     wav_file=wave.open(file_name,"w")
 
     # wav params
-    nchannels = 2
+    nchannels = 1
 
     sampwidth = 2
 
@@ -68,7 +68,7 @@ def save_wav(file_name):
     # use the floating point -1.0 to 1.0 data directly in a WAV file but not
     # obvious how to do that using the wave module in python.
     for sample in audio:
-        wav_file.writeframes(struct.pack('hh', int( sample * 32767.0 ), int(20)))
+        wav_file.writeframes(struct.pack('h', int( sample * 32767.0 ) ))
 
     wav_file.close()
 
@@ -81,4 +81,4 @@ append_sinewave(volume=0.5)
 append_silence()
 append_sinewave()
 append_silence(duration_milliseconds=20000)
-save_wav("output2.wav")
+save_wav("constant3.wav")
