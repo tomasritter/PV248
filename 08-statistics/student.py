@@ -1,12 +1,14 @@
 import pandas as pd
 import sys
+from math import ceil
 import json
+import numpy as np
+from datetime import datetime as dt
 
 df = pd.read_csv(sys.argv[1])
 id = sys.argv[2]
-df.rename(columns=lambda x: x[-2:] if x[-2:].isdigit() else x, inplace=True)
-df = df.groupby(axis=1, level=0).sum()
-df = df.reindex(sorted(df.columns), axis=1)
+ordinal_startdate = dt.strptime("2018-09-17",'%Y-%m-%d').date().toordinal()
+
 if id == "average":
     df = df.drop(columns = "student").mean(axis=0)
 elif id.isdigit():
@@ -14,5 +16,22 @@ elif id.isdigit():
 else:
     raise ValueError("Unrecognized id")
 
-d = {"mean" : df.mean(), "median" : df.median(), "total" : df.sum(), "passed" : float(df.astype(bool).sum(axis=0))}
+df_e = df.rename(index=lambda x: x[-2:]) # Data set of exercises
+df_e = df_e.groupby(axis=0, level=0).sum()
+
+df_d = df.rename(index=lambda x: x[:10]) # Data set of dates
+df_d = df_d.groupby(axis=0, level=0).sum()
+df_d = df_d.reindex(sorted(df_d.index), axis=0).cumsum()
+
+values = df_d.values
+dates = np.array([dt.strptime(x,'%Y-%m-%d').date().toordinal() - ordinal_startdate  \
+         for x in df_d.index])
+
+dates = dates[:, np.newaxis]
+lm = np.linalg.lstsq(dates, values, rcond=None)[0]
+
+d = {"mean" : df_e.mean(), "median" : df_e.median(), "total" : df_e.sum(), "passed" : int(df_e.astype(bool).sum(axis=0)),\
+     "regression slope" : lm[0], "date 16" : str(dt.fromordinal(ordinal_startdate + ceil(16.0 / lm)).date()),\
+     "date 20" : str(dt.fromordinal(ordinal_startdate + ceil(20.0 / lm)).date())}
+
 print(json.dumps(d, indent=4, ensure_ascii = False))
