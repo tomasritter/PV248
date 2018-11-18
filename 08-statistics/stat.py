@@ -7,10 +7,10 @@ mode = sys.argv[2]
 df = df.drop(columns = "student")
 
 if mode == "exercises":
-    df.rename(columns=lambda x: x[-2:], inplace=True)
+    df.rename(columns=lambda x: x[-2:], inplace=True) 
     df = df.groupby(axis=1, level=0).sum()   
 elif mode == "dates":
-    df.rename(columns=lambda x: x[:10], inplace=True)
+    df.rename(columns=lambda x: x[:10], inplace=True) 
     df = df.groupby(axis=1, level=0).sum()   
 elif mode != "deadlines":
     raise ValueError("Unrecognized mode")

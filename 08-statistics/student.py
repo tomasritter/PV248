@@ -1,9 +1,12 @@
 import pandas as pd
 import sys
-from math import ceil
+from math import ceil,isinf
 import json
 import numpy as np
 from datetime import datetime as dt
+
+def predict_date(points, ordinal_startdate, slope):
+    return "inf" if slope == 0.0 else str(dt.fromordinal(ordinal_startdate + ceil(points / slope)).date())
 
 df = pd.read_csv(sys.argv[1])
 id = sys.argv[2]
@@ -31,7 +34,7 @@ dates = dates[:, np.newaxis]
 lm = np.linalg.lstsq(dates, values, rcond=None)[0]
 
 d = {"mean" : df_e.mean(), "median" : df_e.median(), "total" : df_e.sum(), "passed" : int(df_e.astype(bool).sum(axis=0)),\
-     "regression slope" : lm[0], "date 16" : str(dt.fromordinal(ordinal_startdate + ceil(16.0 / lm)).date()),\
-     "date 20" : str(dt.fromordinal(ordinal_startdate + ceil(20.0 / lm)).date())}
+     "regression slope" : lm[0], "date 16" : predict_date(16, ordinal_startdate, lm),\
+     "date 20" : predict_date(20, ordinal_startdate, lm)}
 
 print(json.dumps(d, indent=4, ensure_ascii = False))
