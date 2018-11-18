@@ -1,12 +1,11 @@
 import pandas as pd
 import sys
-from math import ceil,isinf
 import json
 import numpy as np
 from datetime import datetime as dt
 
 def predict_date(points, ordinal_startdate, slope):
-    return "inf" if slope == 0.0 else str(dt.fromordinal(ordinal_startdate + ceil(points / slope)).date())
+    return "inf" if slope == 0.0 else str(dt.fromordinal(ordinal_startdate + points / slope).date())
 
 df = pd.read_csv(sys.argv[1])
 id = sys.argv[2]
