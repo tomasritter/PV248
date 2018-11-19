@@ -14,6 +14,8 @@ ordinal_startdate = dt.strptime("2018-09-17",'%Y-%m-%d').date().toordinal()
 if id == "average":
     df = df.drop(columns = "student").mean(axis=0)
 elif id.isdigit():
+    if int(id) not in df.student.values:
+        raise ValueError("Student doesn't exist")
     df = df.loc[df.student == int(id)].drop(columns = "student").sum(axis=0) # Just to get the same shape of dataframe
 else:
     raise ValueError("Unrecognized id")
