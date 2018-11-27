@@ -46,7 +46,12 @@ class myHandler(BaseHTTPRequestHandler):
         self.send_contents(out_json)
         
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
+        if not "Content-Length" in self.headers:
+            out_json = {"code" : "invalid json"}
+            self.send_contents(out_json)
+            return
+        
+        content_length = int(self.headers["Content-Length"])
         content = self.rfile.read(content_length)
         out_json = None
         request = None
