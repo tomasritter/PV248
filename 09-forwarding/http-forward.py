@@ -1,7 +1,8 @@
 import sys
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import urllib.request
-import socket
+from urllib.error import HTTPError, URLError
+from socket import timeout
 import json
 
 port = sys.argv[1]
@@ -16,28 +17,27 @@ class myHandler(BaseHTTPRequestHandler):
             d["content"] = resp_content
         return d
     
-    def try_urlopen(self, request):
+    def try_urlopen(self, request, delay = 1):
         try:
-            with urllib.request.urlopen(request, timeout = 1) as response:
-                resp_headers = dict(response.getheaders())
+            with urllib.request.urlopen(request, timeout = delay) as response:
+                resp_headers = dict(response.getheaders())  
                 resp_content = response.read()
                 
                 return self.load_json(response.status, resp_headers, resp_content)
                 
-        except socket.timeout:
+        except timeout:
             return {"code" : "timeout"}
+        
+        except HTTPError as e:
+                return {'code' : e.code}
         
     def send_contents(self, out, code=200):
         self.send_response(code)
-        self.send_header('Connection', 'close' )
-        self.send_header('Content-Type', 'application/json')
         self.end_headers()
-        self.wfile.write(bytes(json.dumps(out, indent=4, ensure_ascii = False), 'UTF-8'))
+        self.wfile.write(bytes(json.dumps(out, indent=4, ensure_ascii = False), 'utf-8'))
         
     def do_GET(self):
         headers = dict(self.headers)
-        #if 'Host' in headers:
-         #   del headers['Host']
         
         request = urllib.request.Request(url = upstream, headers = headers, method = "GET")
         
@@ -46,8 +46,9 @@ class myHandler(BaseHTTPRequestHandler):
         self.send_contents(out_json)
         
     def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        content = self.rfile.read(content_length)
         out_json = None
-        content = self.rfile.read()
         request = None
         
         try:
@@ -55,14 +56,16 @@ class myHandler(BaseHTTPRequestHandler):
         except:
             pass
         
-        if request == None or (request["type"] == "POST" and ("url" not in request or "content" not in request)):
+        if request == None or ("type" in request and request["type"] == "POST" \
+                               and ("content" not in request)) \
+                               or "url" not in request:
             out_json = {"code" : "invalid json"}
-            
         else:
-            new_req = urllib.request.Request(url=request["url"], data=request["content"], headers=request["headers"],
-                                                    method=request["type"] if "type" in request else "GET")
+            new_req = urllib.request.Request(url=request["url"], data=bytes(request["content"] if "content" in request else "", 'utf-8'), 
+                                             headers=request["headers"] if "headers" in request else {}, 
+                                             method=request["type"] if "type" in request else "GET")
         
-            out_json = self.try_urlopen(new_req)
+            out_json = self.try_urlopen(new_req, int(request["timeout"] if "timeout" in request else "1"))
         
         self.send_contents(out_json)
         
