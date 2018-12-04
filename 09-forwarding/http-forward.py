@@ -21,7 +21,7 @@ class myHandler(BaseHTTPRequestHandler):
         try:
             with urllib.request.urlopen(request, timeout = delay) as response:
                 resp_headers = dict(response.getheaders())  
-                resp_content = response.read()
+                resp_content = response.read().decode('utf-8')
                 
                 return self.load_json(response.status, resp_headers, resp_content)
                 
@@ -29,17 +29,28 @@ class myHandler(BaseHTTPRequestHandler):
             return {"code" : "timeout"}
         
         except HTTPError as e:
-                return {'code' : e.code}
+            return {"code" : e.code}
+        
+        except URLError as e:
+            return {"code" : str(e.reason)}
         
     def send_contents(self, out, code=200):
         self.send_response(code)
         self.end_headers()
         self.wfile.write(bytes(json.dumps(out, indent=4, ensure_ascii = False), 'utf-8'))
         
+    def check_url(self, url):
+        if url.startswith("http://") or url.startswith("https://"):
+            return url
+        else:
+            return "http://" + url
+        
     def do_GET(self):
         headers = dict(self.headers)
         
-        request = urllib.request.Request(url = upstream, headers = headers, method = "GET")
+        url = self.check_url(upstream)
+        
+        request = urllib.request.Request(url = url, headers = headers, method = "GET")
         
         out_json = self.try_urlopen(request)
         
@@ -66,7 +77,11 @@ class myHandler(BaseHTTPRequestHandler):
                                or "url" not in request:
             out_json = {"code" : "invalid json"}
         else:
-            new_req = urllib.request.Request(url=request["url"], data=bytes(request["content"] if "content" in request else "", 'utf-8'), 
+            url = self.check_url(request["url"])
+            if 'content-type' not in request["headers"]:
+                    request["headers"]['content-type'] = "application/json"
+                    
+            new_req = urllib.request.Request(url=url, data=bytes(request["content"] if "content" in request else None, "utf-8"), 
                                              headers=request["headers"] if "headers" in request else {}, 
                                              method=request["type"] if "type" in request else "GET")
         
