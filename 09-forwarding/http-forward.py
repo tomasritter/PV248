@@ -78,8 +78,8 @@ class myHandler(BaseHTTPRequestHandler):
             out_json = {"code" : "invalid json"}
         else:
             url = self.check_url(request["url"])
-            if 'content-type' not in request["headers"]:
-                    request["headers"]['content-type'] = "application/json"
+            if "headers" in request and "content-type" not in request["headers"]:
+                    request["headers"]["content-type"] = "application/json"
                     
             new_req = urllib.request.Request(url=url, data=bytes(request["content"] if "content" in request else None, "utf-8"), 
                                              headers=request["headers"] if "headers" in request else {}, 
