@@ -1,0 +1,23 @@
+review od 410154, *0.5, pomohol mi v opraveni ulohy
+
+09:
+1. Dej si pozor na hlavičky ve zpracování GET. Tak jak to máš teď to nefunguje (alespoň mě), protože posíláš kompletní hlavičku na upstream. Ta hlavička co ti přijde obsahuje pole 'Host', které značí kam bude dotaz směřovat. Jelikož ty posíláš GET na localhost, tak 'Host':localhost tím pádem posíláš GET znovu sám na sebe. Pro správné fungování musíš z hlavičky záznam o host vymazat.
+2. Ze zadání vyplívá, že náš response musí být vždy json, ale ty nikde nenastavuješ, že budeš posílat json zpět na klienta. Tím pádem pokud zvolím upstream "http://httpbin.org/ip", který vrací pouze text, tak ty sice vrátíš string ve správném json formátu, ale v hlavičkách není, že "Content-Type": "application/json" nevím jestli se to testuje, ale čekal bych že ano.
+3. V POST, pokud v těle nebude Content tak ti to padá, když se snažíš přetypovat None na Bytes. Validní tělo je např.: { "url":"http://httpbin.org/ip" }, takže bacha na to.
+
+Jinak už jen takové drobnosti:
+
+  1. na začátku bereš z args port a ukládáš do proměnné, ale když zakládáš server tak ho bereš znovu z args
+
+  2. v do_Post ten if, kde kontroluješ jestli je vše v pořádku je takový nepřehledný :). Většinou je prostě lepší očekávat, že tam vše je a obalit to do try/except. Pokud tam něco bude chybět vypadne to na ValueError a ty se nemusíš zatěžovat kontrolou.
+
+Jinak dobré, kód je pěkný, žádné brutálně dlouhé metody, POST vypadá že funguje a až opravíš hlavičky v GET tak bude i ten fungovat.
+
+01:
+
+V modu century nenacházíš všechny data, tvůj regex nenajde rok uvnitř nějakého řetězce např. Composition Year: 30. 10. 1822, jež je u print number 604. Myslím, že jsem takovéto záznamy najít měli, ale teď nevím. Ale v celku pěkné řešení.
+
+02:
+Při parsování oddělení záznamů šlo oddělovat záznamy podle prázného řádku a nespoléhat na to že 'Incipit' bude poslední, ale pokud to funguje proč ne. Taky si nejsem jistý jaký byl finální verdikt pro načítání Partiture. Já to dělal tak, že pokud to bylo jednoznačné yes, tak to bylo no, např.: Partiture: yes (incomplete) jsem ukládal jako no, což ty máš jako yes. Občas se ti taky nevyparsoval správně rok např.: Print Number: 824, Locke, Mathew (1621/2-1677) si vyparsoval jako Locke, Mathew (--1677) a takových případů tam pár je.
+
+Jinak super kód pěkný a přehledný, chválím komentáře :).
