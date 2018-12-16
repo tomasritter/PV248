@@ -36,6 +36,7 @@ class myHandler(BaseHTTPRequestHandler):
         
     def send_contents(self, out, code=200):
         self.send_response(code)
+        self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(bytes(json.dumps(out, indent=4, ensure_ascii = False), 'utf-8'))
         
@@ -81,7 +82,7 @@ class myHandler(BaseHTTPRequestHandler):
             if "headers" in request and "content-type" not in request["headers"]:
                     request["headers"]["content-type"] = "application/json"
                     
-            new_req = urllib.request.Request(url=url, data=bytes(request["content"] if "content" in request else None, "utf-8"), 
+            new_req = urllib.request.Request(url=url, data=bytes(request["content"], "utf-8") if "content" in request else None, 
                                              headers=request["headers"] if "headers" in request else {}, 
                                              method=request["type"] if "type" in request else "GET")
         
