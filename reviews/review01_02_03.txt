@@ -1,0 +1,155 @@
+review od 433383, *0.5, dozvedel som sa par zaujimavych veci
+
+——————————————————
+01 - stat.py:
+Je dobrým zvykom písať v python programe 
+>>   if __name__ == '__main__':
+
+A samozrejme kód členiť do fcií. Táto úloha bola pekným príkladom na to, ako rozdeliť kód aspoň do 2 fcií (composer & century). Chápem, že tvoj kód má len 60 riadkov, ale aj v takom prípade to zvyšuje prehľadnosť. 
+
+
+Ak používaš viackrát nejaký výraz, je fajn ho hodiť do premennej, aby si mohol v prípade potreby meniť kód len na jednom mieste. V tvojom kóde ‘sys.argv[2]’ [line 7, 9, 11, 38, 41, 58] - ak by si použil premennú, hneď  by som vedela, že ‘sys.argv[2]’ označuje nejaký mód programu.
+
+
+Je fajn zatvárať otvorené súbory (pekne vysvetlené na https://stackoverflow.com/questions/25070854/why-should-i-close-files-in-python ). V tvojom prípade riadok
+>>   for line in open(sys.argv[1], ‘r’):   [line 18]
+
+by sa dal prepísať ako:
+>> with open(sys.argv[1], ‘r’) as f:
+>>      for line in f:
+
+a táto ‘with’ konštrukcia sa postará o to, aby sa po konci bloku súbor automaticky zatvoril. (Dá sa použiť samozrejme aj klasika ‘open(file, “r”)’ s ‘file.close()’).
+
+
+>> if m is None:   [line 20]
+Python vyhodnocuje podmienku ako ‘if niečo je True’, takže tvoja podmienka by sa dala prepísať ako:
+>> if not m:
+
+
+>> if not kk is None:  [line 49]
+úplne jednoducho by sa tento riadok dal prepísať ako (dvojitá negácia vyzerá na prvý pohľad nečitateľne):
+>> if kk: 
+
+
+Pri ukladaní mien autorov a storočí používaš obyčajný dict, kde musíš manuálne zdvíhať počet výskytov o jedničku - jednoduchšie riešenie je použiť Counter (from collections import Counter), ktorý vezme list prvkov a z neho vyrobí dict tvaru: ’nazov_prvku’: ‘pocet_vykytov’.
+
+Takže kód by mohol vyzerať:
+>>composers = []    [line 17]
+>>for line in open(sys.argv[1], 'r'):
+>>    m = r.match(line)
+>>    if m is None:
+>>        continue
+>>
+>>    # split the capture at ;
+>>    s = re.split(r"; ", m.group(1))
+>>    for key in s:
+>>        # Remove everything after '('
+>>        key = key.split("(", 1)[0]
+>>
+>>        # remove space and ',' from the right, error in dataset
+>>        key = key.rstrip(", ")
+>>        if key:
+>>            composers.append(key)
+>>    
+>>if sys.argv[2] == "composer":
+>>    for key, value in Counter(composers).items():
+>>        print(str(key) + ': ' + str(value))
+
+
+>>for i in range(21):   [line 56]
+>>    if data[i] is 0:
+>>        continue
+>>    print(str(i + 1) + "th century: " + str(data[i]))
+
+Tento for cyklus opäť využíva podmienku, ktorá sa dá “zjednodušiť” a dokonca ‘continue’ nie je ani nutné, kedže v tele for cyklu sa vykonáva len ‘print’. Jednoduchšia (a stále dobre čitateľná) verzia by mohla vyzerať:
+
+>>for i in range(21):   [line 56]
+>>    if data[i]:
+>>        print(str(i + 1) + "th century: " + str(data[i]))
+
+
+Čo sa mi na tvojom kóde veľmi páči sú komentáre pomedzi riadky. Vraví sa síce, že dobrý kód nepotrebuje komentár, ale ak s tým istým kódom nepracuješ každý týždeň, tak to dokáže ušetriť čas (inšpirujem sa). 
+
+——————————————————
+02 - scorelib.py:
+
+>>r = re.compile(r"(.*?): *(.*)")   [line 213]
+Super jednoduchý (funkčný) regex, ja som nenašla nič jednoduchšie než r'([a-zA-Z0-9 ]*):([\S|\s]*)’.
+
+
+>>dict[m.group(1)] = m.group(2).rstrip() or None   [line 220]
+Stačilo by použiť aj “základnú” metódu ‘strip()’, ktorá osekáva slovo aj spredu, aj zozadu.
+
+
+>>if not c.born is None or not c.died is None:   [line 20]
+Znovu mi príde príliš komplikované používať not a None v jednej podmienke. Jednoduchšie:
+>>if c.born or c.died: 
+
+
+V Pythone môžeš pristupovať k poslednému prvku poľa pomocou -1 indexu, napr. v poli ‘array’ k poslednému prvku pristúpiš ako ’array[-1]’ aj bez toho, aby si poznal veľkosť poľa. 
+
+Táto supervlastnosť sa dá využiť aj vo fcii ‘format()’, kde iteruješ cez všetkých autorov. V tvojom prípade používaš iteráciu cez veľkosť poľa:
+>>for i in range(len(self.edition.composition.authors)):   [line 15]
+a premennú ‘i’ využívaš len kvôli kontrole posledného prvku. 
+
+Takže s využitím priameho prístupu k poslednému prvku v poli by sa dalo iterovať rovno cez jednotlivých autorov:
+>>for c in self.edition.composition.authors:  [line 15]
+>>    # Add name to the output string
+>>    s += c.name
+>>    # Add year of birth/death if present
+>>    if c.born or c.died:
+>>        s += " (" + (str(c.born) if not c.born is None else "")
+>>        s += "--" + (str(c.died) if not c.died is None else "") + ")"
+>>    # Add "; " behind all names except for the last one
+>>    if c == self.edition.composition.authors[-1]:
+>>        s += "; "
+
+Rovnaký princíp by sa dal využiť aj vo for cykle na riadku 34.
+
+
+Druhým “zlepšovákom” Pythonu je pri iterácii poľa prístup k prvku a rovno aj jeho indexu - pomocou ‘enumerate’. 
+For cyklus na riadku 42 by sa pomocou ‘enumerate’ dal prepísať ako:
+>>for i, v in enumerate(self.edition.composition.voices):  [line 42]
+
+A týmto spôsobom by si nepotreboval vyťahovať prvok z poľa na základe indexu ako to máš na riadku 43, ale mohol by si k nemu rovno (v premennej ‘v’) pristupovať:
+>>v = self.edition.composition.voices[i]    [line 43]
+
+
+Ak chceš overiť, či sa nejaký reťazec (ne)nachádza v inom testovanom reťazci, miesto fcie ‘find’ môžeš použiť “jednoduchšie” ‘in’:
+>>if a.find("(") == -1:   [line 100]
+by mohlo vyzerať:
+ >>if not “(“ in a:  
+
+
+Ak vyberáš niečo z dictionary, máš 2 možnosti ako to spraviť:
+a) dict[“Title”], ktorý ti zhavaruje, ak v dict žiadny kľúč s menom “Title” nie je, a preto to musíš ošetrovať ako 
+>>title = dict["Title"] if "Title" in dict else None  [line 189]
+
+b) dict.get(“Title”), ktorý ti automaticky vráti None, ak sa kľúč s názvom “Title” v dict-e nenachádza
+>>title = dict.get(“Title”)  [line 189]
+
+Takže všetky výbery z dict vo fcii ‘get_print()’  [line 186] by sa dali zjednodušiť volaním fcie ‘get(_key_)’.
+
+Dokonca dlhočížny riadok 
+>>if "Partiture" in dict and not dict["Partiture"] is None and "yes" in dict["Partiture"]:  [line 200]
+by vyzeral vďaka ‘get(_key_)’:
+>>if dict.get('Partiture') == 'yes':
+
+
+02 - test.py:
+Jediné doporučenie, ktoré mám, je importovať len to, čo skutočne potrebuješ, miesto importu všetkého (*). 
+Miesto
+>>from scorelib import *  [line 2]
+stačí 
+>>from scorelib import load
+
+
+
+——————————————————
+03 - import.py:
+Len vylepšenia, ktoré som už spomínala v predošlých úlohách:
+- import len skutočne potrebného
+- použitie premennej, ak výraz používaš viackrát
+
+03 - scorelib.py:
+Veľmi pekný kód, prehľadný, dobre okomentovaný. V mojom kóde som ošetrovala aj prípad, ak som už mala uloženého autora v db, ale nebol k nemu uvedený rok narodenia/úmrtia a znova som dostala toho istého autora, ale už aj s nejakým rokom, takže som update-la db. To som u teba nevidela, pretože pri vkladaní novej Edition skontroluješ, či sú mená autorov totožné, a ak hej, tak to necháš tak. Iba v prípade, že sa mená autorov líšia, tak ošetruješ aj “môj” prípad. Ale evidentne na tom nezáležalo, kedže testy ti prešli :)
